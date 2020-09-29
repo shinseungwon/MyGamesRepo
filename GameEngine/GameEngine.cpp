@@ -1,16 +1,9 @@
-﻿#include <windows.h>
-#include <stdlib.h>
-#include <string.h>
-#include <tchar.h>
-#include <iostream>
-#include <thread>
-#include <future>
-
+﻿#include "stdafx.h"
 #include "Game.h"
 
-#define WIDTH 512
-
 using namespace std;
+
+#define WIDTH 512
 
 #pragma warning(disable:4996)
 
@@ -23,11 +16,11 @@ static LPWSTR lpCmdLn;
 static int nCmdS;
 
 HWND hWnd;
-//unsigned char** pixels;
 
 int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 void Run(promise<string>* p);
+Game* SetGame();
 
 int main(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
 {
@@ -110,47 +103,61 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 }
 
 void Run(promise<string>* p) {
+	Game* game = SetGame();
+
 	HDC hdc = GetDC(hWnd);
-
-	COLORREF* arr = (COLORREF*)calloc(512 * 512, sizeof(COLORREF));
 	HDC src = CreateCompatibleDC(hdc);
-	HBITMAP map;
-	//LPCWSTR path = TEXT("C:\\Users\\ssw90\\source\\repos\\MyGamesRepo\\GameEngine\\Debug\\test.bmp");
-	//LPCWSTR path = TEXT("C:\\Download\\test3.bmp");	
-	LPCWSTR path = TEXT("test.bmp");
-	
-	map = (HBITMAP)LoadImage(GetModuleHandle(NULL), path, IMAGE_BITMAP, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
-	
-	
-	//SelectObject(src, map);
-	//BitBlt(hdc, 10, 10, 512, 512, src, 0, 0, SRCCOPY);
-
-	//return;
-	int r = 0, g = 0, b = 0;
-	int x = 0, y = 0, z = 0;
-	while (1) {
-
-		//Sleep(1000);
-		//for (int i = 0; i < 512; i++) {
-		//	for (int j = 0; j < 512; j++) {				
-		//		x = (i + j + r) % 256;
-		//		y = (i + j + b) % 256;
-		//		z = (i + j + b) % 256;
-		//		arr[i* 512 + j] = RGB(x, y, z);
-		//	}
-		//}
-		//map = CreateBitmap(512, 512, 1, 8 * 4, (void*)arr);
-
+	HBITMAP map = nullptr;
+	int f = 0;
+	while (1) {		
+		cout << "frame " << f++ << endl;		
+		game->Draw();
+		map = CreateBitmap(WIDTH, WIDTH, 1, 8 * 4, (void*)game->board);
 		SelectObject(src, map);
-		BitBlt(hdc, 10 + r, 10 + g, 512, 512, src, 0, 0, SRCCOPY);
-		r++;
-		g++;
-		b++;
-		cout << "Drawing ..." << r << ' ' << g << ' ' << b << endl;
-		Sleep(100);
+		BitBlt(hdc, 0, 0, WIDTH, WIDTH, src, 0, 0, SRCCOPY);
+		Sleep(100);		
 	}
 
 	DeleteDC(src);
 	ReleaseDC(hWnd, hdc);
 	p->set_value("End");
+}
+
+Game* SetGame() {
+	Game* game = new Game(WIDTH, WIDTH);
+
+	GLayer* bgLayer = new GLayer(WIDTH, WIDTH);
+
+	GObject* background = new GObject();
+	background->AddShape("bmps\\bg.bmp");
+	bgLayer->AddObject(background);
+
+	game->AddLayer(bgLayer);
+
+	GLayer* objectLayer = new GLayer(WIDTH, WIDTH);
+
+	GObject* obj1 = new GObject();
+	obj1->AddShape("bmps\\test1.bmp");
+	obj1->AddShape("bmps\\test2.bmp");
+	obj1->x = 100;
+	obj1->y = 100;
+
+	GObject* obj2 = new GObject();
+	obj2->AddShape("bmps\\test3.bmp");
+	obj2->AddShape("bmps\\test4.bmp");
+	obj2->x = 300;
+	obj2->y = 300;
+
+	vector<pair<int, int>>* action = new vector<pair<int, int>>();
+	action->push_back(make_pair(0, 9));
+	action->push_back(make_pair(1, 15));
+	obj1->actions->push_back(action);
+	obj2->actions->push_back(action);
+
+	objectLayer->AddObject(obj1);
+	objectLayer->AddObject(obj2);
+
+	game->AddLayer(objectLayer);
+
+	return game;
 }

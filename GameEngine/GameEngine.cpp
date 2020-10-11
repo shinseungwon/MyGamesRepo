@@ -1,14 +1,17 @@
 ﻿#include "stdafx.h"
-#include "Game.h"
+#include "Tetris.h"
+
+#pragma comment(lib,"winmm.lib")
 
 using namespace std;
 
-#define WIDTH 512
+#define WIDTH 1024
+#define HEIGHT 512
 
 #pragma warning(disable:4996)
 
-static TCHAR szWindowClass[] = _T("DesktopApp");
-static TCHAR szTitle[] = _T("GameTestBoard");
+static TCHAR windowClass[] = _T("DesktopApp");
+static TCHAR title[] = _T("GameTestBoard");
 
 static HINSTANCE hInst;
 static HINSTANCE hPrevInst;
@@ -16,20 +19,29 @@ static LPWSTR lpCmdLn;
 static int nCmdS;
 
 HWND hWnd;
+Tetris* tetris;
+
+char keys[128];
 
 int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+void Draw(promise<string>* p);
 void Run(promise<string>* p);
-Game* SetGame();
 
-int main(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
-{
+void KeyDown(WPARAM wParam);
+void KeyUp(WPARAM wParam);
+
+int main(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine)
+{	
 	hInst = hInstance;
 	hPrevInst = hPrevInstance;
 	lpCmdLn = lpCmdLine;
-	nCmdS = nCmdShow;
+	nCmdS = 1;
+	
+	srand(static_cast<unsigned int>(time(NULL)));
+	wWinMain(hInst, hPrevInst, lpCmdLn, nCmdS);	
 
-	wWinMain(hInst, hPrevInst, lpCmdLn, nCmdS);
+	return 0;
 }
 
 int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -45,7 +57,7 @@ int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LP
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = NULL;
-	wcex.lpszClassName = szWindowClass;
+	wcex.lpszClassName = windowClass;
 	wcex.hIconSm = LoadIcon(wcex.hInstance, IDI_APPLICATION);
 
 	if (!RegisterClassEx(&wcex))
@@ -54,21 +66,28 @@ int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LP
 		return 1;
 	}
 
-	hWnd = CreateWindow(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW
-		, CW_USEDEFAULT, CW_USEDEFAULT, 512 + 64, 512 + 64, NULL, NULL, hInstance, NULL);
+	hWnd = CreateWindow(windowClass, title, WS_OVERLAPPEDWINDOW
+		, CW_USEDEFAULT, CW_USEDEFAULT, WIDTH + 64, HEIGHT + 64, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
 	{
 		MessageBox(NULL, _T("Call to CreateWindow failed!"), _T("Windows Desktop Guided Tour"), NULL);
 		return 1;
-	}
+	}	
 
-	ShowWindow(hWnd, nCmdShow);
+	ShowWindow(hWnd, nCmdS);
 	UpdateWindow(hWnd);
 
-	promise<string> p;
-	future<string> data = p.get_future();
-	thread t(Run, &p);
+	tetris = new Tetris(WIDTH, HEIGHT);
+	tetris->Prepare();
+
+	promise<string> p1;
+	future<string> data1 = p1.get_future();
+	thread t1(Draw, &p1);
+
+	promise<string> p2;
+	future<string> data2 = p2.get_future();
+	thread t2(Run, &p2);
 
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -84,7 +103,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
-
+	
 	switch (message)
 	{
 	case WM_PAINT:
@@ -92,8 +111,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
-		PostQuitMessage(0);
+		PostQuitMessage(0);		
 		break;
+
+	case WM_KEYDOWN:		
+		KeyDown(wParam);
+		break;
+	case WM_KEYUP:		
+		KeyUp(wParam);
+		break;
+
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 		break;
@@ -102,62 +129,52 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void Run(promise<string>* p) {
-	Game* game = SetGame();
-
+void Draw(promise<string>* p) {	
 	HDC hdc = GetDC(hWnd);
 	HDC src = CreateCompatibleDC(hdc);
-	HBITMAP map = nullptr;
-	int f = 0;
-	while (1) {		
-		cout << "frame " << f++ << endl;		
-		game->Draw();
-		map = CreateBitmap(WIDTH, WIDTH, 1, 8 * 4, (void*)game->board);
-		SelectObject(src, map);
-		BitBlt(hdc, 0, 0, WIDTH, WIDTH, src, 0, 0, SRCCOPY);
-		Sleep(100);		
-	}
 
+	UINT f = 0;
+	while (1) {
+		tetris->game->Draw();
+		COLORREF* board = tetris->game->board;
+
+		if (board != nullptr) {
+			SelectObject(src, CreateBitmap(WIDTH, HEIGHT, 1, 8 * 4, board));
+			BitBlt(hdc, 0, 0, WIDTH, HEIGHT, src, 0, 0, SRCCOPY);
+		}
+		Sleep(100);
+	}
 	DeleteDC(src);
 	ReleaseDC(hWnd, hdc);
 	p->set_value("End");
 }
 
-Game* SetGame() {
-	Game* game = new Game(WIDTH, WIDTH);
+void Run(promise<string>* p) {
+	memset(keys, 0x00, sizeof(char) * 128);	
 
-	GLayer* bgLayer = new GLayer(WIDTH, WIDTH);
+	UINT f = 0;
+	while (1) {
+		tetris->Run(f++);
+		Sleep(1);		
+	}
+	cout << "Game End ..." << endl;
+	p->set_value("End");
+}
 
-	GObject* background = new GObject();
-	background->AddShape("bmps\\bg.bmp");
-	bgLayer->AddObject(background);
+void KeyDown(WPARAM wParam) {
+	if (keys[wParam] == 0) {
+		keys[wParam] = 1;
+		//printf("Key down 0x%x\n", (UINT)wParam);
+		tetris->KeyDown(wParam);
+	}
+	else {
+		//printf("Key pressing 0x%x\n", (UINT)wParam);
+		tetris->KeyPressing(wParam);
+	}
+}
 
-	game->AddLayer(bgLayer);
-
-	GLayer* objectLayer = new GLayer(WIDTH, WIDTH);
-
-	GObject* obj1 = new GObject();
-	obj1->AddShape("bmps\\test1.bmp");
-	obj1->AddShape("bmps\\test2.bmp");
-	obj1->x = 100;
-	obj1->y = 100;
-
-	GObject* obj2 = new GObject();
-	obj2->AddShape("bmps\\test3.bmp");
-	obj2->AddShape("bmps\\test4.bmp");
-	obj2->x = 300;
-	obj2->y = 300;
-
-	vector<pair<int, int>>* action = new vector<pair<int, int>>();
-	action->push_back(make_pair(0, 9));
-	action->push_back(make_pair(1, 15));
-	obj1->actions->push_back(action);
-	obj2->actions->push_back(action);
-
-	objectLayer->AddObject(obj1);
-	objectLayer->AddObject(obj2);
-
-	game->AddLayer(objectLayer);
-
-	return game;
+void KeyUp(WPARAM wParam) {
+	keys[wParam] = 0;
+	//printf("Key up 0x%x\n", (UINT)wParam);
+	tetris->KeyUp(wParam);
 }

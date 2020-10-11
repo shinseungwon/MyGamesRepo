@@ -1,25 +1,21 @@
 #pragma once
+#include "Tools.h"
 using namespace std;
 
 #ifndef GOBJECT
 #define GOBJECT
 
-class BitmapPack {
-public:
-	COLORREF* data;
-	int size;
-	int width;
-	int height;
-};
+class Game;
+class GLayer;
 
 class GObject {
-private:
-	BitmapPack* GetBitmap(string path);
-public:
-	COLORREF* defaultShape = nullptr;
-	vector<COLORREF*>* shapes;
+public:	
+	Game* game = nullptr;
+	GLayer* layer = nullptr;
+	int currentShape = 0;
+	vector<BitmapPack*>* shapes;
 	vector<vector<pair<int, int>>*>* actions;
-	int cAction = 0;
+	int cAction = -1;
 	int cSequence = 0;
 	int cFrame = 0;
 	int width = 0;
@@ -27,11 +23,11 @@ public:
 	int x = 0;
 	int y = 0;
 	GObject();
-	~GObject();
-	void AddShape(COLORREF* shape, int width, int height);
-	void AddShape(string path);
-	COLORREF* GetShape();	
-	void SetAction(int x);	
+	~GObject();	
+	void AddShape(int id);
+	COLORREF* GetShape();
+	void SetAction(int x);
+	void SetShape(int id);
 };
 
 #endif

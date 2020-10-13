@@ -5,14 +5,13 @@ BYTE** tMap = nullptr;
 BYTE tmw = 10;
 BYTE tmh = 20;
 
-Tetris::Tetris(int width, int height) {
+Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 	int i, j, t, bSize = width * height;
 	COLORREF* arr;
-	this->game = new Game(width, height);
 	this->bgLayer = new GLayer(width, height);
-	this->game->AddLayer(bgLayer);
+	AddLayer(bgLayer);
 	this->gLayer = new GLayer(width, height);
-	this->game->AddLayer(gLayer);
+	AddLayer(gLayer);
 
 	tMap = new BYTE * [tmh];
 	for (i = 0; i < tmh; i++) {
@@ -32,10 +31,10 @@ Tetris::Tetris(int width, int height) {
 					temp[j] = (COLORREF)colors[t];
 				}
 			}
-			game->AddShape(CreateBitmap(temp, 16, 4, 4, 16));
+			AddShape(CreateBitmap(temp, 16, 4, 4, 16));
 		}
 		else {
-			game->AddShape(nullptr);
+			AddShape(nullptr);
 		}
 	}
 	delete[] temp;
@@ -51,7 +50,7 @@ Tetris::Tetris(int width, int height) {
 	for (i = 0; i < dSize; i++) {
 		arr[i] = WHITE;
 	}
-	game->AddShape(CreateBitmap(arr, dSize, this->downs->width, this->downs->height));
+	AddShape(CreateBitmap(arr, dSize, this->downs->width, this->downs->height));
 	this->downs->AddShape(28);
 	delete[] arr;
 
@@ -116,7 +115,7 @@ Tetris::Tetris(int width, int height) {
 		}
 	}
 
-	game->AddShape(CreateBitmap(arr, bSize, width, height));
+	AddShape(CreateBitmap(arr, bSize, width, height));
 	background->AddShape(29);
 }
 
@@ -127,7 +126,7 @@ Tetris::~Tetris() {
 void Tetris::Update() {
 	int i, j, s = tmw * tmh;
 
-	BitmapPack* downs = game->shapes->at(28);
+	BitmapPack* downs = shapes->at(28);
 	COLORREF* mapRef = new COLORREF[s];
 	for (i = 0; i < tmh; i++) {
 		for (j = 0; j < tmw; j++) {
@@ -183,14 +182,14 @@ void Tetris::Run(UINT f) {
 	cf = f;
 	if (cf % fr == 0) {
 
-		system("cls");
-		for (int i = 0; i < tmh; i++) {
-			for (int j = 0; j < tmw; j++) {
-				printf("%d ", tMap[i][j]);
-			}
-			printf("\n");
-		}
-		printf("\n");
+		//system("cls");
+		//for (int i = 0; i < tmh; i++) {
+		//	for (int j = 0; j < tmw; j++) {
+		//		printf("%d ", tMap[i][j]);
+		//	}
+		//	printf("\n");
+		//}
+		//printf("\n");
 
 		if (state == 0) {
 			if (current->Down() == 1) {
@@ -211,37 +210,44 @@ void Tetris::Run(UINT f) {
 }
 
 void Tetris::KeyDown(WPARAM wParam) {
-	switch (wParam) {
-	case 0x20://space
-		current->Drop();
-		break;
-	case 0x25://l
-		current->Left();
-		break;
-	case 0x26://u	
-		current->Rotate();
-		break;
-	case 0x27://r
-		current->Right();
-		break;
-	case 0x28://d
-		if (state == 0 && current->Down() == 1) {
-			current->Mark();
-			Erase();
-			Update();
-			current->Set(next->id);
-			next->Set();
-			if (current->Top() == 1) {
-				state = 1;
+	if (keys[wParam] == 0) {
+		keys[wParam] = 1;
+		switch (wParam) {
+		case 0x20://space
+			current->Drop();
+			break;
+		case 0x25://l
+			current->Left();
+			break;
+		case 0x26://u	
+			current->Rotate();
+			break;
+		case 0x27://r
+			current->Right();
+			break;
+		case 0x28://d
+			if (state == 0 && current->Down() == 1) {
+				current->Mark();
+				Erase();
+				Update();
+				current->Set(next->id);
+				next->Set();
+				if (current->Top() == 1) {
+					state = 1;
+				}
 			}
+			break;
+		default:
+			break;
 		}
-		break;
-	default:
-		break;
+	}
+	else {
+		KeyPressing(wParam);
 	}
 }
 
 void Tetris::KeyUp(WPARAM wParam) {
+	keys[wParam] = 0;
 	switch (wParam) {
 	case 0x20://space
 		break;
@@ -474,7 +480,7 @@ BYTE Block::Down() {
 
 BYTE Block::Drop() {
 	int i, j, k, a, b, dist = 0, mDist = tmh;
-	const BYTE* block = blocks[cs * 7 + id];	
+	const BYTE* block = blocks[cs * 7 + id];
 
 	for (i = x; i < x + Wt(); i++) {
 		a = i - x;
@@ -485,7 +491,7 @@ BYTE Block::Drop() {
 					if (tMap[k][i] > 1) {
 						break;
 					}
-				}				
+				}
 				dist = k - j - 1;
 				if (dist < mDist) {
 					mDist = dist;
@@ -504,7 +510,7 @@ BYTE Block::Drop() {
 	}
 	else {
 		return 1;
-	}	
+	}
 }
 
 BYTE Block::Left() {

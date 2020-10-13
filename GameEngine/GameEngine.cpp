@@ -19,27 +19,22 @@ static LPWSTR lpCmdLn;
 static int nCmdS;
 
 HWND hWnd;
-Tetris* tetris;
-
-char keys[128];
+Game* myGame;
 
 int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow);
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-void Draw(promise<string>* p);
-void Run(promise<string>* p);
-
-void KeyDown(WPARAM wParam);
-void KeyUp(WPARAM wParam);
+//void Draw(promise<string>* p);
+//void Run(promise<string>* p);
 
 int main(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine)
-{	
+{
 	hInst = hInstance;
 	hPrevInst = hPrevInstance;
 	lpCmdLn = lpCmdLine;
 	nCmdS = 1;
-	
+
 	srand(static_cast<unsigned int>(time(NULL)));
-	wWinMain(hInst, hPrevInst, lpCmdLn, nCmdS);	
+	wWinMain(hInst, hPrevInst, lpCmdLn, nCmdS);
 
 	return 0;
 }
@@ -73,27 +68,22 @@ int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LP
 	{
 		MessageBox(NULL, _T("Call to CreateWindow failed!"), _T("Windows Desktop Guided Tour"), NULL);
 		return 1;
-	}	
+	}
 
 	ShowWindow(hWnd, nCmdS);
 	UpdateWindow(hWnd);
 
-	tetris = new Tetris(WIDTH, HEIGHT);
-	tetris->Prepare();
-
-	promise<string> p1;
-	future<string> data1 = p1.get_future();
-	thread t1(Draw, &p1);
-
-	promise<string> p2;
-	future<string> data2 = p2.get_future();
-	thread t2(Run, &p2);
+	//Start game
+	myGame = new Tetris(hWnd, WIDTH, HEIGHT);
+	myGame->Prepare();
+	GameStart(myGame, WIDTH, HEIGHT);
+	//~Start game
 
 	MSG msg;
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
-		DispatchMessage(&msg);
+		DispatchMessage(&msg);		
 	}
 
 	return (int)msg.wParam;
@@ -103,7 +93,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
 	HDC hdc;
-	
+
 	switch (message)
 	{
 	case WM_PAINT:
@@ -111,15 +101,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		EndPaint(hWnd, &ps);
 		break;
 	case WM_DESTROY:
-		PostQuitMessage(0);		
+		PostQuitMessage(0);
 		break;
 
-	case WM_KEYDOWN:		
-		KeyDown(wParam);
+		//Game event
+	case WM_KEYDOWN:
+		myGame->KeyDown(wParam);
 		break;
-	case WM_KEYUP:		
-		KeyUp(wParam);
+	case WM_KEYUP:
+		myGame->KeyUp(wParam);
 		break;
+		//~Game event
 
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
@@ -127,54 +119,4 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 
 	return 0;
-}
-
-void Draw(promise<string>* p) {	
-	HDC hdc = GetDC(hWnd);
-	HDC src = CreateCompatibleDC(hdc);
-
-	UINT f = 0;
-	while (1) {
-		tetris->game->Draw();
-		COLORREF* board = tetris->game->board;
-
-		if (board != nullptr) {
-			SelectObject(src, CreateBitmap(WIDTH, HEIGHT, 1, 8 * 4, board));
-			BitBlt(hdc, 0, 0, WIDTH, HEIGHT, src, 0, 0, SRCCOPY);
-		}
-		Sleep(100);
-	}
-	DeleteDC(src);
-	ReleaseDC(hWnd, hdc);
-	p->set_value("End");
-}
-
-void Run(promise<string>* p) {
-	memset(keys, 0x00, sizeof(char) * 128);	
-
-	UINT f = 0;
-	while (1) {
-		tetris->Run(f++);
-		Sleep(1);		
-	}
-	cout << "Game End ..." << endl;
-	p->set_value("End");
-}
-
-void KeyDown(WPARAM wParam) {
-	if (keys[wParam] == 0) {
-		keys[wParam] = 1;
-		//printf("Key down 0x%x\n", (UINT)wParam);
-		tetris->KeyDown(wParam);
-	}
-	else {
-		//printf("Key pressing 0x%x\n", (UINT)wParam);
-		tetris->KeyPressing(wParam);
-	}
-}
-
-void KeyUp(WPARAM wParam) {
-	keys[wParam] = 0;
-	//printf("Key up 0x%x\n", (UINT)wParam);
-	tetris->KeyUp(wParam);
 }

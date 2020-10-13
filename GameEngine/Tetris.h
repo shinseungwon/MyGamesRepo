@@ -6,23 +6,6 @@ using namespace std;
 #ifndef TETRIS
 #define TETRIS
 
-#define BLACK 0x00000000
-#define WHITE 0x00ffffff
-
-#define RED 0x00ff0000
-#define GREEN 0x0000ff00
-#define BLUE 0x000000ff
-#define YELLOW 0x00ffff00
-#define CYAN 0x0000ffff
-#define MAGENTA 0x00ff00ff
-
-#define ORANGE 0x00ff7f00
-#define PINK 0x00ff007f
-#define ERIN 0x0000ff7f
-#define LIME 0x007fff00
-#define PURPLE 0x007f00ff
-#define AZURE 0x00007fff
-
 const COLORREF colors[7] = { RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA, ORANGE };
 
 const BYTE blocks[28][16] = {
@@ -98,13 +81,12 @@ public:
 	~Block();
 };
 
-class Tetris {
+class Tetris : public Game {
 public:
 	UINT cf = 0;
 	BYTE fr = 50;
-	UINT score = 0;
+	UINT score = 0;	
 	
-	Game* game;
 	GLayer* bgLayer;
 	GLayer* gLayer;
 	GObject* downs;
@@ -114,12 +96,12 @@ public:
 	Block* current = nullptr;
 	Block* next = nullptr;
 
-	Tetris(int width, int height);
+	Tetris(HWND hWnd, int width, int height);
 
 	void Update();
 	void Erase();
 
-	void Prepare();
+	void Prepare();	
 	void Run(UINT f);
 
 	void KeyDown(WPARAM wParam);

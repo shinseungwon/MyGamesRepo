@@ -1404,3 +1404,52 @@ BYTE Block::Drop() {
 		return 0;
 	}
 }
+
+
+void KeyDown(WPARAM wParam) {
+	if (keys[wParam] == 0) {
+		keys[wParam] = 1;
+		//printf("Key down 0x%x\n", (UINT)wParam);
+		tetris->KeyDown(wParam);
+	}
+	else {
+		//printf("Key pressing 0x%x\n", (UINT)wParam);
+		tetris->KeyPressing(wParam);
+	}
+}
+
+void KeyUp(WPARAM wParam) {
+	keys[wParam] = 0;
+	//printf("Key up 0x%x\n", (UINT)wParam);
+	tetris->KeyUp(wParam);
+}
+
+//void Draw(promise<string>* p) {
+//	HDC hdc = GetDC(hWnd);
+//	HDC src = CreateCompatibleDC(hdc);
+//
+//	UINT f = 0;
+//	while (1) {
+//		myGame->Draw();
+//		COLORREF* board = myGame->board;
+//
+//		if (board != nullptr) {
+//			SelectObject(src, CreateBitmap(WIDTH, HEIGHT, 1, 8 * 4, board));
+//			BitBlt(hdc, 0, 0, WIDTH, HEIGHT, src, 0, 0, SRCCOPY);
+//		}
+//		Sleep(100);
+//	}
+//	DeleteDC(src);
+//	ReleaseDC(hWnd, hdc);
+//	p->set_value("End");
+//}
+//
+//void Run(promise<string>* p) {
+//	UINT f = 0;
+//	while (1) {
+//		myGame->Run(f++);
+//		Sleep(1);
+//	}
+//	cout << "Game End ..." << endl;
+//	p->set_value("End");
+//}

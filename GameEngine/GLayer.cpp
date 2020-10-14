@@ -23,7 +23,7 @@ void GLayer::Draw(COLORREF* board) {
 		int sc = 0;
 		for (j = 0; j < o->height; j++) {
 			for (k = 0; k < o->width; k++) {
-				if (c[sc + k] != 0x00ffffff) {
+				if (c[sc + k] != TRANSPARENT) {
 					board[sb + k] = c[sc + k];
 				}				
 			}

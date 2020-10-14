@@ -25,7 +25,7 @@ Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 			t = i % 7;
 			for (j = 0; j < 16; j++) {
 				if (blocks[i][j] == 0) {
-					temp[j] = WHITE;
+					temp[j] = TRANSPARENT;
 				}
 				else {
 					temp[j] = (COLORREF)colors[t];
@@ -48,7 +48,7 @@ Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 	arr = new COLORREF[dSize];
 	//memset(arr, 0x00, size * sizeof(COLORREF));
 	for (i = 0; i < dSize; i++) {
-		arr[i] = WHITE;
+		arr[i] = TRANSPARENT;
 	}
 	AddShape(CreateBitmap(arr, dSize, this->downs->width, this->downs->height));
 	this->downs->AddShape(28);
@@ -117,13 +117,91 @@ Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 
 	AddShape(CreateBitmap(arr, bSize, width, height));
 	background->AddShape(29);
+
+	//letter test (shape : 30~)
+	temp = new COLORREF[32];
+	int mass = 4;
+	for (i = 0; i < 10; i++) {
+		for (j = 0; j < 32; j++) {
+			if (numberBitmaps[i][j] == 0) {
+				temp[j] = TRANSPARENT;
+			}
+			else {
+				temp[j] = (COLORREF)WHITE;
+			}
+		}
+		AddShape(CreateBitmap(temp, 32, 4, 8, mass));
+	}
+
+	memset(temp, 0xff, 32 * sizeof(int));
+	AddShape(CreateBitmap(temp, 32, 4, 8, mass));
+
+	scoreBoard = new GObject * [10];
+	GObject* letter;
+	for (i = 0; i < 10; i++) {
+		letter = new GObject();
+		bgLayer->AddObject(letter);
+		letter->y = 256 + 64 + 32;
+		letter->x = 256 + 128 + 32 + i * 5 * mass;
+		letter->width = 4 * mass;
+		letter->height = 8 * mass;
+		for (j = 0; j <= 10; j++) {
+			letter->AddShape(30 + j);
+		}
+		scoreBoard[i] = letter;
+	}
+
+	UINT num = 0;
+	string numStr = to_string(num);
+
+	for (i = 0; i < 10 - numStr.size(); i++) {
+		scoreBoard[i]->SetShape(10);
+	}
+
+	for (i = 10 - numStr.size(); i < 10; i++) {
+		scoreBoard[i]->SetShape(numStr[i - (10 - numStr.size())] - 0x30);
+	}
+
+	delete[] temp;
+
+
+
+
+
+
+	temp = new COLORREF[32];	
+	for (i = 0; i < 26; i++) {
+		for (j = 0; j < 32; j++) {
+			if (alphabetBitmaps[i][j] == 0) {
+				temp[j] = TRANSPARENT;
+			}
+			else {
+				temp[j] = (COLORREF)WHITE;
+			}
+		}
+		AddShape(CreateBitmap(temp, 32, 4, 8, mass));
+	}
+
+	for (i = 0; i < 26; i++) {
+		letter = new GObject();
+		bgLayer->AddObject(letter);
+		letter->y = 256 + 128 + 32;
+		letter->x = 32 + i * 5 * mass;
+		letter->width = 4 * mass;
+		letter->height = 8 * mass;
+		for (j = 0; j < 26; j++) {
+			letter->AddShape(41 + j);
+		}
+		letter->SetShape(i);
+	}
+	delete[] temp;
 }
 
 Tetris::~Tetris() {
 
 }
 
-void Tetris::Update() {
+void Tetris::Update(BYTE c) {
 	int i, j, s = tmw * tmh;
 
 	BitmapPack* downs = shapes->at(28);
@@ -134,17 +212,28 @@ void Tetris::Update() {
 				mapRef[i * tmw + j] = colors[tMap[i][j] - 2];
 			}
 			else {
-				mapRef[i * tmw + j] = WHITE;
+				mapRef[i * tmw + j] = TRANSPARENT;
 			}
 		}
 	}
 	WriteBitmap(mapRef, downs->data, s, tmw, tmh, 16);
 	delete[] mapRef;
+
+	score += ls[c] * (level + 1);
+	string numStr = to_string(score);
+
+	for (i = 0; i < 10 - numStr.size(); i++) {
+		scoreBoard[i]->SetShape(10);
+	}
+
+	for (i = 10 - numStr.size(); i < 10; i++) {
+		scoreBoard[i]->SetShape(numStr[i - (10 - numStr.size())] - 0x30);
+	}
 }
 
-void Tetris::Erase() {
+BYTE Tetris::Erase() {
 	int i, j;
-	BYTE c = 0, k = tmh - 1;
+	BYTE k = tmh - 1, c = 0;
 	BYTE** t = new BYTE * [tmh];
 	for (i = 0; i < tmh; i++) {
 		t[i] = new BYTE[tmw];
@@ -157,10 +246,10 @@ void Tetris::Erase() {
 				break;
 			}
 		}
-		if (j < tmw) {
+		if (j < tmw) { //Áß°£¿¡ ³ª¿È -> ºóÄ­ ÀÖÀ½
 			memcpy(t[k--], tMap[i], tmw * sizeof(BYTE));
 		}
-		else {
+		else { //Áß°£¿¡ ¾È³ª¿È ->ºóÄ­ ¾øÀ½ -> ¶óÀÎ ¼ö
 			c++;
 		}
 	}
@@ -170,6 +259,8 @@ void Tetris::Erase() {
 		delete[] t[i];
 	}
 	delete[] t;
+
+	return c;
 }
 
 void Tetris::Prepare() {
@@ -194,8 +285,7 @@ void Tetris::Run(UINT f) {
 		if (state == 0) {
 			if (current->Down() == 1) {
 				current->Mark();
-				Erase();
-				Update();
+				Update(Erase());
 				current->Set(next->id);
 				next->Set();
 				if (current->Top() == 1) {
@@ -228,8 +318,7 @@ void Tetris::KeyDown(WPARAM wParam) {
 		case 0x28://d
 			if (state == 0 && current->Down() == 1) {
 				current->Mark();
-				Erase();
-				Update();
+				Update(Erase());
 				current->Set(next->id);
 				next->Set();
 				if (current->Top() == 1) {
@@ -279,8 +368,7 @@ void Tetris::KeyPressing(WPARAM wParam) {
 	case 0x28://d
 		if (state == 0 && current->Down() == 1) {
 			current->Mark();
-			Erase();
-			Update();
+			Update(Erase());
 			current->Set(next->id);
 			next->Set();
 
@@ -500,7 +588,6 @@ BYTE Block::Drop() {
 			}
 		}
 	}
-	cout << mDist << endl;
 
 	if (mDist > 0) {
 		y += mDist;

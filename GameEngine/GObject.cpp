@@ -27,10 +27,6 @@ void GObject::SetShape(int id) {
 
 COLORREF* GObject::GetShape() {
 
-	if (shapes->size() <= currentShape) {
-		cout << "over !!" << endl;
-	}
-
 	if (cAction == -1 || actions->size() == 0 ) {		
 		return shapes->at(currentShape)->data;
 	}

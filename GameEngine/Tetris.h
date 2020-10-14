@@ -47,6 +47,9 @@ const BYTE scs[7] = { 2, 2, 4, 1, 2, 4, 4 };
 const BYTE bws[28] = { 3, 3, 3, 2, 4, 3, 3, 2, 2, 2, 0, 1, 2, 2, 0, 0, 3, 0, 0, 3, 3, 0, 0, 2, 0, 0, 2, 2 };
 const BYTE bhs[28] = { 2, 2, 2, 2, 1, 2, 2, 3, 3, 3, 0, 4, 3, 3, 0, 0, 2, 0, 0, 2, 2, 0, 0, 3, 0, 0, 3, 3 };
 
+const BYTE lfr[10] = { 50, 45, 40, 35, 30, 25, 20, 15, 10, 5 };
+const USHORT ls[5] = { 0, 50, 100, 300, 1200 };
+
 class Block {
 public:
 	BYTE id = 0;
@@ -85,7 +88,9 @@ class Tetris : public Game {
 public:
 	UINT cf = 0;
 	BYTE fr = 50;
-	UINT score = 0;	
+	BYTE level = 0;
+	UINT score = 0;
+	GObject** scoreBoard;
 	
 	GLayer* bgLayer;
 	GLayer* gLayer;
@@ -98,8 +103,8 @@ public:
 
 	Tetris(HWND hWnd, int width, int height);
 
-	void Update();
-	void Erase();
+	void Update(BYTE c);
+	BYTE Erase();
 
 	void Prepare();	
 	void Run(UINT f);

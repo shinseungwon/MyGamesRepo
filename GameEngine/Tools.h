@@ -1,6 +1,9 @@
 #pragma once
 using namespace std;
 
+#ifndef TOOLS
+#define TOOLS
+
 class BitmapPack {
 public:
 	COLORREF* data;
@@ -92,3 +95,5 @@ void RotateCW(BitmapPack* pack);
 void RotateCCW(BitmapPack* pack);
 
 BitmapPack* BpClone(BitmapPack* pack);
+
+#endif

@@ -11,6 +11,7 @@ class Game;
 class GLayer {
 public:
 	Game* game = nullptr;
+	bool hide = 0;
 	int priority = -1;
 	int width = 0;
 	int height = 0;	

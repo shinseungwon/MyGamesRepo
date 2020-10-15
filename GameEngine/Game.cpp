@@ -1,15 +1,12 @@
 #include "stdafx.h"
 #include "Game.h"
 
-Game::Game(HWND hWnd, int bWidth, int bHeight) {
-	this->hWnd = hWnd;
-
+Game::Game(HWND hWnd, WORD bWidth, WORD bHeight) {
+	this->hWnd = hWnd;	
 	shapes = new vector<BitmapPack*>();
-	shapes = new vector<BitmapPack*>();
-
 	layers = new vector<GLayer*>();
-	board = new COLORREF[bWidth * bHeight];
-	memset(board, 0, bWidth * bHeight * sizeof(COLORREF));
+	board = new COLORREF[(DWORD64)bWidth * bHeight];
+	memset(board, 0, (DWORD64)bWidth * bHeight * sizeof(COLORREF));
 	memset(keys, 0x00, 128 * sizeof(BYTE));
 	this->bWidth = bWidth;
 	this->bHeight = bHeight;
@@ -33,7 +30,9 @@ void Game::Draw() {
 	memset(board, 0, bWidth * bHeight * sizeof(COLORREF));
 	for (int i = 0; i < layers->size(); i++) {
 		GLayer* l = layers->at(i);
-		l->Draw(board);
+		if (!l->hide) {
+			l->Draw(board);
+		}		
 	}
 }
 

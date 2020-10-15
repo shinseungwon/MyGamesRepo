@@ -17,8 +17,8 @@ BitmapPack::BitmapPack(int s, int w, int h, COLORREF* d) {
 
 BitmapPack* GetBitmap(string path) {
 	BitmapPack* res = new BitmapPack();
-	int i = 0, j = 0;
-	char* arr = nullptr;
+	DWORD i = 0, j = 0;
+	BYTE* arr = nullptr;
 
 	ifstream ifstr(path, ios::binary);
 
@@ -37,7 +37,7 @@ BitmapPack* GetBitmap(string path) {
 			memcpy(&bitCount, &vc[28], sizeof(short));
 
 			int resultSize = (vc.size() - headerSize) / 3 * 4;
-			arr = new char[resultSize];
+			arr = new BYTE[resultSize];
 
 			if (bitCount == 24) {
 				for (i = headerSize; i < vc.size(); i += 3) {

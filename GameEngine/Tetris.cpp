@@ -5,13 +5,15 @@ BYTE** tMap = nullptr;
 BYTE tmw = 10;
 BYTE tmh = 20;
 
-Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
-	int i, j, t, bSize = width * height;
+Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
+	DWORD i, j, t, bSize = width * height;
 	COLORREF* arr;
 	this->bgLayer = new GLayer(width, height);
 	AddLayer(bgLayer);
 	this->gLayer = new GLayer(width, height);
 	AddLayer(gLayer);
+	this->cLayer = new GLayer(width, height);
+	AddLayer(cLayer);
 
 	tMap = new BYTE * [tmh];
 	for (i = 0; i < tmh; i++) {
@@ -75,11 +77,12 @@ Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 		this->next->object->AddShape(i);
 	}
 
-	GObject* background = new GObject();
+	background = new GObject();
 	background->width = width;
 	background->height = height;
 	bgLayer->AddObject(background);
 
+	//Background
 	arr = new COLORREF[bSize];
 	memset(arr, 0x00, bSize * sizeof(COLORREF));
 	int ps = 512 - 16 * 5, pe = 512 + 16 * 5, pb = 16 * 20
@@ -117,6 +120,10 @@ Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 
 	AddShape(CreateBitmap(arr, bSize, width, height));
 	background->AddShape(29);
+	delete[] arr;
+	//~Background
+
+
 
 	//letter test (shape : 30~)
 	temp = new COLORREF[32];
@@ -164,45 +171,98 @@ Tetris::Tetris(HWND hWnd, int width, int height) : Game(hWnd, width, height) {
 
 	delete[] temp;
 
+	//Cover	
+	cover = new GObject();
+	cover->width = width;
+	cover->height = height;
+	cLayer->AddObject(cover);
 
+	arr = new COLORREF[bSize];
+	memset(arr, 0x00, bSize * sizeof(COLORREF));
+	AddShape(CreateBitmap(arr, bSize, width, height));
+	cover->AddShape(41);
+	delete[] arr;
 
-
-
-
-	temp = new COLORREF[32];	
-	for (i = 0; i < 26; i++) {
+	arr = new COLORREF[32];
+	for (i = 0; i < 52; i++) {
 		for (j = 0; j < 32; j++) {
 			if (alphabetBitmaps[i][j] == 0) {
-				temp[j] = TRANSPARENT;
+				arr[j] = TRANSPARENT;
 			}
 			else {
-				temp[j] = (COLORREF)WHITE;
+				arr[j] = (COLORREF)WHITE;
 			}
 		}
-		AddShape(CreateBitmap(temp, 32, 4, 8, mass));
+		AddShape(CreateBitmap(arr, 32, 4, 8, 4));
 	}
+	delete[] arr;
 
-	for (i = 0; i < 26; i++) {
+	sub = new GObject * [16];
+	for (i = 0; i < 16; i++) {
 		letter = new GObject();
-		bgLayer->AddObject(letter);
-		letter->y = 256 + 128 + 32;
-		letter->x = 32 + i * 5 * mass;
+		cLayer->AddObject(letter);
+		letter->y = 512 - 128;
+		letter->x = 256 + 64 + 32 + i * 5 * mass;
 		letter->width = 4 * mass;
 		letter->height = 8 * mass;
-		for (j = 0; j < 26; j++) {
-			letter->AddShape(41 + j);
+		for (j = 0; j <= 10; j++) {
+			letter->AddShape(30 + j);
 		}
-		letter->SetShape(i);
+		for (j = 0; j < 52; j++) {
+			letter->AddShape(42 + j);
+		}
+		sub[i] = letter;
 	}
-	delete[] temp;
+
+	int tCount = 8 * 64, r;
+	arr = new COLORREF[tCount];
+	for (i = 0; i < tCount; i++) {
+		if (gameTitle[i] == 0) {
+			arr[i] = TRANSPARENT;
+		}
+		else {
+			r = (i % 64) / 8;
+			arr[i] = r == 7 ? WHITE : colors[r];
+		}
+	}
+	AddShape(CreateBitmap(arr, 64 * 8, 64, 8, 8));
+	title = new GObject();
+	cLayer->AddObject(title);
+	title->y = 128;
+	title->x = 256;
+	title->width = 64 * 8;
+	title->height = 8 * 8;
+	title->AddShape(94);
+	CoverTitle();
+	//~Cover
+
+	levelText = new GObject * [4];
+	for (i = 0; i < 4; i++) {
+		letter = new GObject();
+		gLayer->AddObject(letter);
+		letter->y = 256 - 32;
+		letter->x = 512 + 256 - 32 + i * 5 * mass;
+		letter->width = 4 * mass;
+		letter->height = 8 * mass;
+		for (j = 0; j <= 10; j++) {
+			letter->AddShape(30 + j);
+		}
+		for (j = 0; j < 52; j++) {
+			letter->AddShape(42 + j);
+		}
+		levelText[i] = letter;
+	}
+	levelText[0]->SetShape(53 - 31);
+	levelText[1]->SetShape(63 - 31);
 }
 
 Tetris::~Tetris() {
 
 }
 
-void Tetris::Update(BYTE c) {
-	int i, j, s = tmw * tmh;
+void Tetris::UpdateDowns() {
+	DWORD64 i, j;
+	WORD s = tmw * tmh;
 
 	BitmapPack* downs = shapes->at(28);
 	COLORREF* mapRef = new COLORREF[s];
@@ -218,7 +278,10 @@ void Tetris::Update(BYTE c) {
 	}
 	WriteBitmap(mapRef, downs->data, s, tmw, tmh, 16);
 	delete[] mapRef;
+}
 
+void Tetris::UpdateScores(BYTE c) {
+	int i;
 	score += ls[c] * (level + 1);
 	string numStr = to_string(score);
 
@@ -285,7 +348,8 @@ void Tetris::Run(UINT f) {
 		if (state == 0) {
 			if (current->Down() == 1) {
 				current->Mark();
-				Update(Erase());
+				UpdateScores(Erase());
+				UpdateDowns();
 				current->Set(next->id);
 				next->Set();
 				if (current->Top() == 1) {
@@ -294,7 +358,17 @@ void Tetris::Run(UINT f) {
 			}
 		}
 		else if (state == 1) {
-			cout << "End ..." << endl;
+			CoverGameOver();
+			cLayer->hide = 0;
+		}
+		else if (state == 2) {
+
+		}
+		else if (state == 3) {
+
+		}
+		else {
+
 		}
 	}
 }
@@ -303,6 +377,42 @@ void Tetris::KeyDown(WPARAM wParam) {
 	if (keys[wParam] == 0) {
 		keys[wParam] = 1;
 		switch (wParam) {
+		case 0x10://shift
+			if (state == 0 && level < 9) {
+				level++;
+				fr = lfr[level];
+				RefreshLevel();
+			}
+			break;
+		case 0x11://ctrl
+			if (state == 0 && level > 0) {
+				level--;
+				fr = lfr[level];
+				RefreshLevel();
+			}
+			break;
+		case 0x0d://enter
+			if (state == 1) {
+				Reset();
+				cLayer->hide = 1;
+				state = 0;
+			}
+			else if (state == 3) {
+				cLayer->hide = 1;
+				state = 0;
+			}
+			break;
+		case 0x1b://esc			
+			if (state == 0) {
+				CoverPause();
+				state = 2;
+				cLayer->hide = 0;
+			}
+			else if (state == 2) {
+				state = 0;
+				cLayer->hide = 1;
+			}
+			break;
 		case 0x20://space
 			current->Drop();
 			break;
@@ -318,7 +428,8 @@ void Tetris::KeyDown(WPARAM wParam) {
 		case 0x28://d
 			if (state == 0 && current->Down() == 1) {
 				current->Mark();
-				Update(Erase());
+				UpdateScores(Erase());
+				UpdateDowns();
 				current->Set(next->id);
 				next->Set();
 				if (current->Top() == 1) {
@@ -368,7 +479,8 @@ void Tetris::KeyPressing(WPARAM wParam) {
 	case 0x28://d
 		if (state == 0 && current->Down() == 1) {
 			current->Mark();
-			Update(Erase());
+			UpdateScores(Erase());
+			UpdateDowns();
 			current->Set(next->id);
 			next->Set();
 
@@ -382,8 +494,87 @@ void Tetris::KeyPressing(WPARAM wParam) {
 	}
 }
 
+void Tetris::CoverTitle() {
+	//  Press  Enter  
+	sub[0]->SetShape(40 - 30);
+	sub[1]->SetShape(40 - 30);
+	sub[2]->SetShape(83 - 31);
+	sub[3]->SetShape(59 - 31);
+	sub[4]->SetShape(46 - 31);
+	sub[5]->SetShape(60 - 31);
+	sub[6]->SetShape(60 - 31);
+	sub[7]->SetShape(40 - 30);
+	sub[8]->SetShape(40 - 30);
+	sub[9]->SetShape(72 - 31);
+	sub[10]->SetShape(55 - 31);
+	sub[11]->SetShape(61 - 31);
+	sub[12]->SetShape(46 - 31);
+	sub[13]->SetShape(59 - 31);
+	sub[14]->SetShape(40 - 30);
+	sub[15]->SetShape(40 - 30);
+}
+
+void Tetris::CoverPause() {
+	//     Paused     
+	sub[0]->SetShape(10);
+	sub[1]->SetShape(10);
+	sub[2]->SetShape(10);
+	sub[3]->SetShape(10);
+	sub[4]->SetShape(10);
+	sub[5]->SetShape(83 - 31);
+	sub[6]->SetShape(42 - 31);
+	sub[7]->SetShape(62 - 31);
+	sub[8]->SetShape(60 - 31);
+	sub[9]->SetShape(46 - 31);
+	sub[10]->SetShape(45 - 31);
+	sub[11]->SetShape(10);
+	sub[12]->SetShape(10);
+	sub[13]->SetShape(10);
+	sub[14]->SetShape(10);
+	sub[15]->SetShape(10);
+}
+
+void Tetris::CoverGameOver() {
+	//   Game  Over   
+	sub[0]->SetShape(10);
+	sub[1]->SetShape(10);
+	sub[2]->SetShape(10);
+	sub[3]->SetShape(74 - 31);
+	sub[4]->SetShape(42 - 31);
+	sub[5]->SetShape(54 - 31);
+	sub[6]->SetShape(46 - 31);
+	sub[7]->SetShape(10);
+	sub[8]->SetShape(10);
+	sub[9]->SetShape(82 - 31);
+	sub[10]->SetShape(63 - 31);
+	sub[11]->SetShape(46 - 31);
+	sub[12]->SetShape(59 - 31);
+	sub[13]->SetShape(10);
+	sub[14]->SetShape(10);
+	sub[15]->SetShape(10);
+}
+
+void Tetris::RefreshLevel() {
+	levelText[3]->SetShape(level);
+}
+
+void Tetris::Reset() {
+	level = 0;
+	fr = 50;
+	score = 0;
+	for (int i = 0; i < tmh; i++) {
+		memset(tMap[i], 0x00, tmw * sizeof(BYTE));
+	}
+	UpdateDowns();
+	Prepare();
+}
+
 Block::Block() {
 
+}
+
+Block::~Block() {
+	object = nullptr;
 }
 
 void Block::Set(BYTE id) {
@@ -397,10 +588,6 @@ void Block::Set(BYTE id) {
 
 	this->cs = 0;
 	this->object->SetShape(this->id);
-}
-
-Block::~Block() {
-	object = nullptr;
 }
 
 void Block::Update() {

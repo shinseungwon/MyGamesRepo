@@ -12,6 +12,7 @@ class GObject {
 public:	
 	Game* game = nullptr;
 	GLayer* layer = nullptr;
+	bool hide = 0;
 	int currentShape = 0;
 	vector<BitmapPack*>* shapes;
 	vector<vector<pair<int, int>>*>* actions;

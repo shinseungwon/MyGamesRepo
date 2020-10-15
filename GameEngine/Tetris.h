@@ -8,6 +8,18 @@ using namespace std;
 
 const COLORREF colors[7] = { RED, GREEN, BLUE, YELLOW, CYAN, MAGENTA, ORANGE };
 
+const BYTE gameTitle[8 * 64] = { 1,1,0,0,0,0,1,1, 1,1,0,0,0,0,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+							     1,1,1,0,0,1,1,1, 1,1,1,0,0,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+							     1,1,1,1,1,1,1,1, 0,1,1,1,1,1,1,0, 0,0,0,1,1,0,0,0, 1,1,0,0,0,0,0,0, 0,0,0,1,1,0,0,0, 1,1,0,0,0,0,1,1, 0,0,0,1,1,0,0,0, 1,1,0,0,0,0,0,0,
+							     1,1,0,1,1,0,1,1, 0,0,1,1,1,1,0,0, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1,
+							     1,1,0,0,0,0,1,1, 0,0,0,1,1,0,0,0, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1,
+							     1,1,0,0,0,0,1,1, 0,0,0,1,1,0,0,0, 0,0,0,1,1,0,0,0, 1,1,0,0,0,0,0,0, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,0,0, 0,0,0,1,1,0,0,0, 0,0,0,0,0,0,1,1,
+							     1,1,0,0,0,0,1,1, 0,0,0,1,1,0,0,0, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,1,1,0,0,0, 1,1,0,1,1,1,1,0, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,
+							     1,1,0,0,0,0,1,1, 0,0,0,1,1,0,0,0, 0,0,0,1,1,0,0,0, 1,1,1,1,1,1,1,1, 0,0,0,1,1,0,0,0, 1,1,0,0,1,1,1,1, 1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1
+};
+
+
+
 const BYTE blocks[28][16] = {
 							 { 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 							,{ 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
@@ -90,20 +102,29 @@ public:
 	BYTE fr = 50;
 	BYTE level = 0;
 	UINT score = 0;
-	GObject** scoreBoard;
-	
+
 	GLayer* bgLayer;
 	GLayer* gLayer;
-	GObject* downs;
+	GLayer* cLayer;
 
-	BYTE state = 0;
+	GObject** scoreBoard;	
+	GObject** sub;
+	GObject** levelText;
+
+	GObject* background;
+	GObject* cover;
+	GObject* downs;
+	GObject* title;
+
+	BYTE state = 3;//0 : running, 1 : game over, 2 : paused, 3 : game title
 
 	Block* current = nullptr;
 	Block* next = nullptr;
 
-	Tetris(HWND hWnd, int width, int height);
+	Tetris(HWND hWnd, WORD width, WORD height);
 
-	void Update(BYTE c);
+	void UpdateDowns();
+	void UpdateScores(BYTE c);
 	BYTE Erase();
 
 	void Prepare();	
@@ -112,6 +133,14 @@ public:
 	void KeyDown(WPARAM wParam);
 	void KeyUp(WPARAM wParam);
 	void KeyPressing(WPARAM wParam);
+
+	void CoverTitle();
+	void CoverPause();
+	void CoverGameOver();
+
+	void RefreshLevel();
+
+	void Reset();
 
 	~Tetris();
 };

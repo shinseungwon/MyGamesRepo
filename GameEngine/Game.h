@@ -102,12 +102,12 @@ public:
 	vector<GLayer*>* layers;
 
 	COLORREF* board;
-	int bWidth = 0;
-	int bHeight = 0;
+	DWORD64 bWidth = 0;
+	DWORD64 bHeight = 0;
 
 	BYTE keys[128];
 
-	Game(HWND hWnd, int bWidth, int bHeight);
+	Game(HWND hWnd, WORD bWidth, WORD bHeight);
 
 	void AddShape(string path);
 	void AddShape(BitmapPack* pack);

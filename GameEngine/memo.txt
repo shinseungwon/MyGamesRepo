@@ -1453,3 +1453,31 @@ void KeyUp(WPARAM wParam) {
 //	cout << "Game End ..." << endl;
 //	p->set_value("End");
 //}
+
+
+	temp = new COLORREF[32];	
+	for (i = 0; i < 26; i++) {
+		for (j = 0; j < 32; j++) {
+			if (alphabetBitmaps[i][j] == 0) {
+				temp[j] = TRANSPARENT;
+			}
+			else {
+				temp[j] = (COLORREF)WHITE;
+			}
+		}
+		AddShape(CreateBitmap(temp, 32, 4, 8, mass));
+	}
+
+	for (i = 0; i < 26; i++) {
+		letter = new GObject();
+		bgLayer->AddObject(letter);
+		letter->y = 256 + 128 + 32;
+		letter->x = 32 + i * 5 * mass;
+		letter->width = 4 * mass;
+		letter->height = 8 * mass;
+		for (j = 0; j < 26; j++) {
+			letter->AddShape(41 + j);
+		}
+		letter->SetShape(i);
+	}
+	delete[] temp;

@@ -12,6 +12,10 @@ void GObject::AddShape(int id) {
 	shapes->push_back(game->shapes->at(id));
 }
 
+void GObject::AddShape(BitmapPack* pack) {
+	shapes->push_back(pack);
+}
+
 void GObject::SetAction(int x) {
 	if (x < actions->size() && x >= 0) {
 		cAction = x;

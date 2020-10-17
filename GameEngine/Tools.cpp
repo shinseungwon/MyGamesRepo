@@ -17,7 +17,7 @@ BitmapPack::BitmapPack(int s, int w, int h, COLORREF* d) {
 
 BitmapPack* GetBitmap(string path) {
 	BitmapPack* res = new BitmapPack();
-	DWORD i = 0, j = 0;
+	int i = 0, j = 0;
 	BYTE* arr = nullptr;
 
 	ifstream ifstr(path, ios::binary);
@@ -73,19 +73,19 @@ DWORD LoadMp3(HWND& hWnd, LPCWSTR path)
 {
 	MCI_OPEN_PARMS mciOpen;
 	mciOpen.lpstrDeviceType = L"MPEGVideo";
-	mciOpen.lpstrElementName = path;
-	DWORD res = mciSendCommand(1, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_ELEMENT, (DWORD)(LPVOID)&mciOpen);
-	char* errorStr = new char[100];
-	mciGetErrorStringA(res, errorStr, 100);
+	mciOpen.lpstrElementName = path;	
+	DWORD res = mciSendCommand(1, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_ELEMENT, (DWORD64)(LPVOID)&mciOpen);
+	char* errorStr = new char[128];
+	mciGetErrorStringA(res, errorStr, 128);
 	cout << "Load error : " << res << "(" << errorStr << ")" << endl;
 	return res;
 }
 
 void PlayMp3(HWND& hWnd, int id) {
 	MCI_PLAY_PARMS mciPlay;
-	mciPlay.dwCallback = (DWORD)hWnd;
-	mciSendCommand(id, MCI_SEEK, MCI_SEEK_TO_START, (DWORD)(LPVOID)NULL);
-	mciSendCommand(id, MCI_PLAY, MCI_NOTIFY, (DWORD)(LPVOID)&mciPlay);
+	//mciPlay.dwCallback = (DWORD)hWnd;
+	mciSendCommand(id, MCI_SEEK, MCI_SEEK_TO_START, (DWORD64)(LPVOID)NULL);
+	mciSendCommand(id, MCI_PLAY, MCI_NOTIFY, (DWORD64)(LPVOID)&mciPlay);
 }
 
 void WriteBitmap(COLORREF* a, COLORREF* b, int size, int width, int height, int m) {

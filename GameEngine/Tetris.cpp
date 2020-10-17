@@ -7,7 +7,12 @@ BYTE tmh = 20;
 
 Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 	DWORD i, j, t, bSize = width * height;
+	BitmapPack* bp;
 	COLORREF* arr;
+
+	AddSound(L"tetris\\down.mp3");
+	AddSound(L"tetris\\erase.mp3");
+
 	this->bgLayer = new GLayer(width, height);
 	AddLayer(bgLayer);
 	this->gLayer = new GLayer(width, height);
@@ -21,25 +26,26 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 		memset(tMap[i], 0, tmw * sizeof(BYTE));
 	}
 
-	COLORREF* temp = new COLORREF[16];
+	arr = new COLORREF[16];
 	for (i = 0; i < 28; i++) {
 		if (blocks[i] != nullptr) {
+
 			t = i % 7;
 			for (j = 0; j < 16; j++) {
 				if (blocks[i][j] == 0) {
-					temp[j] = TRANSPARENT;
+					arr[j] = TRANSPARENT;
 				}
 				else {
-					temp[j] = (COLORREF)colors[t];
+					arr[j] = (COLORREF)colors[t];
 				}
 			}
-			AddShape(CreateBitmap(temp, 16, 4, 4, 16));
+			AddShape(CreateBitmap(arr, 16, 4, 4, 16));
 		}
 		else {
 			AddShape(nullptr);
 		}
 	}
-	delete[] temp;
+	delete[] arr;
 
 	this->downs = new GObject();
 	this->gLayer->AddObject(downs);
@@ -48,10 +54,7 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 	this->downs->x = 512 - tmw * 16 / 2;
 	int dSize = this->downs->width * this->downs->height;
 	arr = new COLORREF[dSize];
-	//memset(arr, 0x00, size * sizeof(COLORREF));
-	for (i = 0; i < dSize; i++) {
-		arr[i] = TRANSPARENT;
-	}
+	memset(arr, 0xff, dSize * sizeof(COLORREF));
 	AddShape(CreateBitmap(arr, dSize, this->downs->width, this->downs->height));
 	this->downs->AddShape(28);
 	delete[] arr;
@@ -118,58 +121,38 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 		}
 	}
 
-	AddShape(CreateBitmap(arr, bSize, width, height));
-	background->AddShape(29);
+	bp = CreateBitmap(arr, bSize, width, height);
+	AddShape(bp);
+	background->AddShape(bp);
 	delete[] arr;
 	//~Background
 
-
-
-	//letter test (shape : 30~)
-	temp = new COLORREF[32];
-	int mass = 4;
-	for (i = 0; i < 10; i++) {
-		for (j = 0; j < 32; j++) {
-			if (numberBitmaps[i][j] == 0) {
-				temp[j] = TRANSPARENT;
-			}
-			else {
-				temp[j] = (COLORREF)WHITE;
-			}
-		}
-		AddShape(CreateBitmap(temp, 32, 4, 8, mass));
-	}
-
-	memset(temp, 0xff, 32 * sizeof(int));
-	AddShape(CreateBitmap(temp, 32, 4, 8, mass));
-
-	scoreBoard = new GObject * [10];
+	//score
+	BYTE mass = 4;
+	scoreBoard = new GObject * [8];
 	GObject* letter;
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 8; i++) {
 		letter = new GObject();
 		bgLayer->AddObject(letter);
 		letter->y = 256 + 64 + 32;
-		letter->x = 256 + 128 + 32 + i * 5 * mass;
+		letter->x = 256 + 128 + 64 + i * 5 * mass;
 		letter->width = 4 * mass;
 		letter->height = 8 * mass;
-		for (j = 0; j <= 10; j++) {
-			letter->AddShape(30 + j);
+		for (j = 0; j < 10; j++) {
+			letter->AddShape(asciis[48 + j]);
 		}
+		letter->AddShape(asciis[32]);
 		scoreBoard[i] = letter;
 	}
 
 	UINT num = 0;
 	string numStr = to_string(num);
 
-	for (i = 0; i < 10 - numStr.size(); i++) {
+	for (i = 0; i < 8; i++) {
 		scoreBoard[i]->SetShape(10);
 	}
-
-	for (i = 10 - numStr.size(); i < 10; i++) {
-		scoreBoard[i]->SetShape(numStr[i - (10 - numStr.size())] - 0x30);
-	}
-
-	delete[] temp;
+	scoreBoard[7]->SetShape(0);
+	//score
 
 	//Cover	
 	cover = new GObject();
@@ -179,40 +162,16 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 
 	arr = new COLORREF[bSize];
 	memset(arr, 0x00, bSize * sizeof(COLORREF));
-	AddShape(CreateBitmap(arr, bSize, width, height));
-	cover->AddShape(41);
+	bp = CreateBitmap(arr, bSize, width, height);
+	AddShape(bp);
+	cover->AddShape(bp);
 	delete[] arr;
 
-	arr = new COLORREF[32];
-	for (i = 0; i < 52; i++) {
-		for (j = 0; j < 32; j++) {
-			if (alphabetBitmaps[i][j] == 0) {
-				arr[j] = TRANSPARENT;
-			}
-			else {
-				arr[j] = (COLORREF)WHITE;
-			}
-		}
-		AddShape(CreateBitmap(arr, 32, 4, 8, 4));
-	}
-	delete[] arr;
-
-	sub = new GObject * [16];
-	for (i = 0; i < 16; i++) {
-		letter = new GObject();
-		cLayer->AddObject(letter);
-		letter->y = 512 - 128;
-		letter->x = 256 + 64 + 32 + i * 5 * mass;
-		letter->width = 4 * mass;
-		letter->height = 8 * mass;
-		for (j = 0; j <= 10; j++) {
-			letter->AddShape(30 + j);
-		}
-		for (j = 0; j < 52; j++) {
-			letter->AddShape(42 + j);
-		}
-		sub[i] = letter;
-	}
+	title = new GObject();
+	title->y = 128;
+	title->x = 256;
+	title->width = 64 * 8;
+	title->height = 8 * 8;
 
 	int tCount = 8 * 64, r;
 	arr = new COLORREF[tCount];
@@ -225,17 +184,14 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 			arr[i] = r == 7 ? WHITE : colors[r];
 		}
 	}
-	AddShape(CreateBitmap(arr, 64 * 8, 64, 8, 8));
-	title = new GObject();
+
+	bp = CreateBitmap(arr, 64 * 8, 64, 8, 8);
+	AddShape(bp);
+	title->AddShape(bp);
 	cLayer->AddObject(title);
-	title->y = 128;
-	title->x = 256;
-	title->width = 64 * 8;
-	title->height = 8 * 8;
-	title->AddShape(94);
-	CoverTitle();
 	//~Cover
 
+	//level
 	levelText = new GObject * [4];
 	for (i = 0; i < 4; i++) {
 		letter = new GObject();
@@ -244,16 +200,34 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 		letter->x = 512 + 256 - 32 + i * 5 * mass;
 		letter->width = 4 * mass;
 		letter->height = 8 * mass;
-		for (j = 0; j <= 10; j++) {
-			letter->AddShape(30 + j);
-		}
-		for (j = 0; j < 52; j++) {
-			letter->AddShape(42 + j);
-		}
 		levelText[i] = letter;
 	}
-	levelText[0]->SetShape(53 - 31);
-	levelText[1]->SetShape(63 - 31);
+	levelText[0]->AddShape(asciis[108]);
+	levelText[1]->AddShape(asciis[118]);
+	levelText[2]->AddShape(asciis[32]);
+
+	for (i = 0; i < 10; i++) {
+		levelText[3]->AddShape(asciis[48 + i]);
+	}
+	//~level
+
+	//sub
+	sub = new GObject * [16];
+	for (i = 0; i < 16; i++) {
+		letter = new GObject();
+		cLayer->AddObject(letter);
+		letter->y = 512 - 128;
+		letter->x = 256 + 64 + 32 + i * 5 * mass;
+		letter->width = 4 * mass;
+		letter->height = 8 * mass;
+		for (j = 0; j < 128; j++) {
+			letter->AddShape(asciis[j]);
+		}
+		sub[i] = letter;
+	}
+	//~sub
+
+	CoverTitle();
 }
 
 Tetris::~Tetris() {
@@ -261,9 +235,7 @@ Tetris::~Tetris() {
 }
 
 void Tetris::UpdateDowns() {
-	DWORD64 i, j;
-	WORD s = tmw * tmh;
-
+	int i, j, s = tmw * tmh;
 	BitmapPack* downs = shapes->at(28);
 	COLORREF* mapRef = new COLORREF[s];
 	for (i = 0; i < tmh; i++) {
@@ -285,12 +257,16 @@ void Tetris::UpdateScores(BYTE c) {
 	score += ls[c] * (level + 1);
 	string numStr = to_string(score);
 
-	for (i = 0; i < 10 - numStr.size(); i++) {
+	for (i = 0; i < 8 - numStr.size(); i++) {
 		scoreBoard[i]->SetShape(10);
 	}
 
-	for (i = 10 - numStr.size(); i < 10; i++) {
-		scoreBoard[i]->SetShape(numStr[i - (10 - numStr.size())] - 0x30);
+	for (i = 8 - numStr.size(); i < 8; i++) {
+		scoreBoard[i]->SetShape(numStr[i - (8 - numStr.size())] - 0x30);
+	}
+
+	if (c > 0) {
+		RunSound(1);
 	}
 }
 
@@ -335,7 +311,7 @@ void Tetris::Prepare() {
 void Tetris::Run(UINT f) {
 	cf = f;
 	if (cf % fr == 0) {
-
+		
 		//system("cls");
 		//for (int i = 0; i < tmh; i++) {
 		//	for (int j = 0; j < tmw; j++) {
@@ -345,8 +321,9 @@ void Tetris::Run(UINT f) {
 		//}
 		//printf("\n");
 
-		if (state == 0) {
-			if (current->Down() == 1) {
+		if (state == 0) {			
+			if (current->Down() == 1) {				
+				RunSound(0);
 				current->Mark();
 				UpdateScores(Erase());
 				UpdateDowns();
@@ -413,7 +390,7 @@ void Tetris::KeyDown(WPARAM wParam) {
 				cLayer->hide = 1;
 			}
 			break;
-		case 0x20://space
+		case 0x20://space						
 			current->Drop();
 			break;
 		case 0x25://l
@@ -425,8 +402,9 @@ void Tetris::KeyDown(WPARAM wParam) {
 		case 0x27://r
 			current->Right();
 			break;
-		case 0x28://d
+		case 0x28://d			
 			if (state == 0 && current->Down() == 1) {
+				RunSound(0);
 				current->Mark();
 				UpdateScores(Erase());
 				UpdateDowns();
@@ -478,6 +456,7 @@ void Tetris::KeyPressing(WPARAM wParam) {
 		break;
 	case 0x28://d
 		if (state == 0 && current->Down() == 1) {
+			RunSound(0);
 			current->Mark();
 			UpdateScores(Erase());
 			UpdateDowns();
@@ -496,62 +475,26 @@ void Tetris::KeyPressing(WPARAM wParam) {
 
 void Tetris::CoverTitle() {
 	//  Press  Enter  
-	sub[0]->SetShape(40 - 30);
-	sub[1]->SetShape(40 - 30);
-	sub[2]->SetShape(83 - 31);
-	sub[3]->SetShape(59 - 31);
-	sub[4]->SetShape(46 - 31);
-	sub[5]->SetShape(60 - 31);
-	sub[6]->SetShape(60 - 31);
-	sub[7]->SetShape(40 - 30);
-	sub[8]->SetShape(40 - 30);
-	sub[9]->SetShape(72 - 31);
-	sub[10]->SetShape(55 - 31);
-	sub[11]->SetShape(61 - 31);
-	sub[12]->SetShape(46 - 31);
-	sub[13]->SetShape(59 - 31);
-	sub[14]->SetShape(40 - 30);
-	sub[15]->SetShape(40 - 30);
+	const char* arr = "  Press  Enter  ";
+	for (int i = 0; i < 16; i++) {
+		sub[i]->SetShape(arr[i]);
+	}
 }
 
 void Tetris::CoverPause() {
 	//     Paused     
-	sub[0]->SetShape(10);
-	sub[1]->SetShape(10);
-	sub[2]->SetShape(10);
-	sub[3]->SetShape(10);
-	sub[4]->SetShape(10);
-	sub[5]->SetShape(83 - 31);
-	sub[6]->SetShape(42 - 31);
-	sub[7]->SetShape(62 - 31);
-	sub[8]->SetShape(60 - 31);
-	sub[9]->SetShape(46 - 31);
-	sub[10]->SetShape(45 - 31);
-	sub[11]->SetShape(10);
-	sub[12]->SetShape(10);
-	sub[13]->SetShape(10);
-	sub[14]->SetShape(10);
-	sub[15]->SetShape(10);
+	const char* arr = "     Paused     ";
+	for (int i = 0; i < 16; i++) {
+		sub[i]->SetShape(arr[i]);
+	}
 }
 
 void Tetris::CoverGameOver() {
 	//   Game  Over   
-	sub[0]->SetShape(10);
-	sub[1]->SetShape(10);
-	sub[2]->SetShape(10);
-	sub[3]->SetShape(74 - 31);
-	sub[4]->SetShape(42 - 31);
-	sub[5]->SetShape(54 - 31);
-	sub[6]->SetShape(46 - 31);
-	sub[7]->SetShape(10);
-	sub[8]->SetShape(10);
-	sub[9]->SetShape(82 - 31);
-	sub[10]->SetShape(63 - 31);
-	sub[11]->SetShape(46 - 31);
-	sub[12]->SetShape(59 - 31);
-	sub[13]->SetShape(10);
-	sub[14]->SetShape(10);
-	sub[15]->SetShape(10);
+	const char* arr = "   Game  Over   ";
+	for (int i = 0; i < 16; i++) {
+		sub[i]->SetShape(arr[i]);
+	}
 }
 
 void Tetris::RefreshLevel() {
@@ -756,7 +699,7 @@ BYTE Block::Down() {
 BYTE Block::Drop() {
 	int i, j, k, a, b, dist = 0, mDist = tmh;
 	const BYTE* block = blocks[cs * 7 + id];
-
+	
 	for (i = x; i < x + Wt(); i++) {
 		a = i - x;
 		for (j = y + Ht() - 1; j >= y; j--) {

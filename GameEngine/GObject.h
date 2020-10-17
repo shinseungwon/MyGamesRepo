@@ -26,6 +26,7 @@ public:
 	GObject();
 	~GObject();	
 	void AddShape(int id);
+	void AddShape(BitmapPack* pack);
 	COLORREF* GetShape();
 	void SetAction(int x);
 	void SetShape(int id);

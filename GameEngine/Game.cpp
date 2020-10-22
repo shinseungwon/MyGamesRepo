@@ -127,7 +127,7 @@ void GameDraw(Game* game, promise<string>* p) {
 			SelectObject(src, CreateBitmap(game->bWidth, game->bHeight, 1, 8 * 4, board));
 			BitBlt(hdc, 0, 0, game->bWidth, game->bHeight, src, 0, 0, SRCCOPY);
 		}
-		Sleep(100);
+		Sleep(game->waiting);
 	}
 	DeleteDC(src);
 	ReleaseDC(game->hWnd, hdc);

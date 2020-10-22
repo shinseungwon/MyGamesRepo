@@ -120,7 +120,10 @@ public:
 	DWORD64 bWidth = 0;
 	DWORD64 bHeight = 0;
 
+	BYTE lockKeys = 0;
 	BYTE keys[128];
+
+	BYTE waiting = 15;
 
 	UINT soundCount = 0;
 	vector<BYTE>* soundPlaying;

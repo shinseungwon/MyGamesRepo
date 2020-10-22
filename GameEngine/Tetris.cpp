@@ -47,18 +47,6 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 	}
 	delete[] arr;
 
-	this->downs = new GObject();
-	this->gLayer->AddObject(downs);
-	this->downs->width = 16 * tmw;
-	this->downs->height = 16 * tmh;
-	this->downs->x = 512 - tmw * 16 / 2;
-	int dSize = this->downs->width * this->downs->height;
-	arr = new COLORREF[dSize];
-	memset(arr, 0xff, dSize * sizeof(COLORREF));
-	AddShape(CreateBitmap(arr, dSize, this->downs->width, this->downs->height));
-	this->downs->AddShape(28);
-	delete[] arr;
-
 	this->next = new Block();
 	this->next->object = new GObject();
 	this->next->object->width = 4 * 16;
@@ -74,6 +62,19 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 	this->current->object->width = 4 * 16;
 	this->current->object->height = 4 * 16;
 	this->gLayer->AddObject(this->current->object);
+
+	this->downs = new GObject();
+	this->gLayer->AddObject(downs);
+	this->downs->width = 16 * tmw;
+	this->downs->height = 16 * tmh;
+	this->downs->x = 512 - tmw * 16 / 2;
+	int dSize = this->downs->width * this->downs->height;
+	arr = new COLORREF[dSize];
+	memset(arr, 0xff, dSize * sizeof(COLORREF));
+	bp = CreateBitmap(arr, dSize, this->downs->width, this->downs->height);
+	AddShape(bp);
+	this->downs->AddShape(bp);
+	delete[] arr;
 
 	for (i = 0; i < 28; i++) {
 		this->current->object->AddShape(i);
@@ -238,6 +239,7 @@ void Tetris::UpdateDowns() {
 	int i, j, s = tmw * tmh;
 	BitmapPack* downs = shapes->at(28);
 	COLORREF* mapRef = new COLORREF[s];
+
 	for (i = 0; i < tmh; i++) {
 		for (j = 0; j < tmw; j++) {
 			if (tMap[i][j] > 1) {
@@ -264,15 +266,13 @@ void Tetris::UpdateScores(BYTE c) {
 	for (i = 8 - numStr.size(); i < 8; i++) {
 		scoreBoard[i]->SetShape(numStr[i - (8 - numStr.size())] - 0x30);
 	}
-
-	if (c > 0) {
-		RunSound(1);
-	}
 }
 
 BYTE Tetris::Erase() {
-	int i, j;
-	BYTE k = tmh - 1, c = 0;
+	int i, j, k, lp, sp;
+	BYTE erased[4];
+	memset(erased, 0x00, 4 * sizeof(BYTE));
+	BYTE x = tmh - 1, c = 0;
 	BYTE** t = new BYTE * [tmh];
 	for (i = 0; i < tmh; i++) {
 		t[i] = new BYTE[tmw];
@@ -286,11 +286,34 @@ BYTE Tetris::Erase() {
 			}
 		}
 		if (j < tmw) { //Áß°£¿¡ ³ª¿È -> ºóÄ­ ÀÖÀ½
-			memcpy(t[k--], tMap[i], tmw * sizeof(BYTE));
+			memcpy(t[x--], tMap[i], tmw * sizeof(BYTE));
 		}
 		else { //Áß°£¿¡ ¾È³ª¿È ->ºóÄ­ ¾øÀ½ -> ¶óÀÎ ¼ö
+			erased[c] = i;
 			c++;
 		}
+	}
+
+	if (c > 0) {
+		lockKeys = 1;
+		RunSound(1);
+		COLORREF* data = downs->shapes->at(0)->data;
+		lp = 16 * 16 * tmw;
+		for (i = 0; i < 10; i++) {
+			for (j = 0; j < c; j++) {
+				sp = 16 * tmw * erased[j] * 16;
+				for (k = sp; k < sp + lp; k++) {
+					if (i % 2 == 0) {
+						data[k] = WHITE;
+					}
+					else {
+						data[k] = BLACK;
+					}
+				}
+			}
+			Sleep(100);
+		}
+		lockKeys = 0;
 	}
 
 	for (i = 0; i < tmh; i++) {
@@ -311,7 +334,7 @@ void Tetris::Prepare() {
 void Tetris::Run(UINT f) {
 	cf = f;
 	if (cf % fr == 0) {
-		
+
 		//system("cls");
 		//for (int i = 0; i < tmh; i++) {
 		//	for (int j = 0; j < tmw; j++) {
@@ -321,8 +344,8 @@ void Tetris::Run(UINT f) {
 		//}
 		//printf("\n");
 
-		if (state == 0) {			
-			if (current->Down() == 1) {				
+		if (state == 0) {
+			if (current->Down() == 1) {
 				RunSound(0);
 				current->Mark();
 				UpdateScores(Erase());
@@ -351,7 +374,7 @@ void Tetris::Run(UINT f) {
 }
 
 void Tetris::KeyDown(WPARAM wParam) {
-	if (keys[wParam] == 0) {
+	if (!lockKeys && keys[wParam] == 0) {
 		keys[wParam] = 1;
 		switch (wParam) {
 		case 0x10://shift
@@ -425,21 +448,23 @@ void Tetris::KeyDown(WPARAM wParam) {
 }
 
 void Tetris::KeyUp(WPARAM wParam) {
-	keys[wParam] = 0;
-	switch (wParam) {
-	case 0x20://space
-		break;
-	case 0x25://l
-		break;
-	case 0x26://u
-		break;
-	case 0x27://r
-		break;
-	case 0x28://d
-		break;
-	default:
-		break;
-	}
+	if (!lockKeys) {
+		keys[wParam] = 0;
+		switch (wParam) {
+		case 0x20://space
+			break;
+		case 0x25://l
+			break;
+		case 0x26://u
+			break;
+		case 0x27://r
+			break;
+		case 0x28://d
+			break;
+		default:
+			break;
+		}
+	}	
 }
 
 void Tetris::KeyPressing(WPARAM wParam) {
@@ -699,7 +724,7 @@ BYTE Block::Down() {
 BYTE Block::Drop() {
 	int i, j, k, a, b, dist = 0, mDist = tmh;
 	const BYTE* block = blocks[cs * 7 + id];
-	
+
 	for (i = x; i < x + Wt(); i++) {
 		a = i - x;
 		for (j = y + Ht() - 1; j >= y; j--) {

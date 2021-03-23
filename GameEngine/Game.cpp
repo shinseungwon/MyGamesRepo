@@ -3,15 +3,16 @@
 
 Game::Game(HWND hWnd, WORD bWidth, WORD bHeight) {
 	this->hWnd = hWnd;
+	this->bWidth = bWidth;
+	this->bHeight = bHeight;
+
 	shapes = new vector<BitmapPack*>();
 	layers = new vector<GLayer*>();
 	soundPlaying = new vector<BYTE>();
 	soundLocs = new vector<LPCTSTR>();
 	board = new COLORREF[(DWORD64)bWidth * bHeight];
 	memset(board, 0, (DWORD64)bWidth * bHeight * sizeof(COLORREF));
-	memset(keys, 0x00, 128 * sizeof(BYTE));
-	this->bWidth = bWidth;
-	this->bHeight = bHeight;
+	memset(keys, 0x00, 128 * sizeof(BYTE));	
 
 	int i, j;
 	BitmapPack* b;

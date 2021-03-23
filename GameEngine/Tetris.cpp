@@ -13,11 +13,11 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 	AddSound(L"tetris\\down.mp3");
 	AddSound(L"tetris\\erase.mp3");
 
-	this->bgLayer = new GLayer(width, height);
+	bgLayer = new GLayer(width, height);
 	AddLayer(bgLayer);
-	this->gLayer = new GLayer(width, height);
+	gLayer = new GLayer(width, height);
 	AddLayer(gLayer);
-	this->cLayer = new GLayer(width, height);
+	cLayer = new GLayer(width, height);
 	AddLayer(cLayer);
 
 	tMap = new BYTE * [tmh];
@@ -47,28 +47,28 @@ Tetris::Tetris(HWND hWnd, WORD width, WORD height) : Game(hWnd, width, height) {
 	}
 	delete[] arr;
 
-	this->next = new Block();
-	this->next->object = new GObject();
-	this->next->object->width = 4 * 16;
-	this->next->object->height = 4 * 16;
-	this->gLayer->AddObject(this->next->object);
-	this->next->x = -1;
-	this->next->y = -1;
-	this->next->object->x = 512 + 256 - 32;
-	this->next->object->y = 128;
+	next = new Block();
+	next->object = new GObject();
+	next->object->width = 4 * 16;
+	next->object->height = 4 * 16;
+	gLayer->AddObject(this->next->object);
+	next->x = -1;
+	next->y = -1;
+	next->object->x = 512 + 256 - 32;
+	next->object->y = 128;
 
-	this->current = new Block();
-	this->current->object = new GObject();
-	this->current->object->width = 4 * 16;
-	this->current->object->height = 4 * 16;
-	this->gLayer->AddObject(this->current->object);
+	current = new Block();
+	current->object = new GObject();
+	current->object->width = 4 * 16;
+	current->object->height = 4 * 16;
+	gLayer->AddObject(this->current->object);
 
-	this->downs = new GObject();
-	this->gLayer->AddObject(downs);
-	this->downs->width = 16 * tmw;
-	this->downs->height = 16 * tmh;
-	this->downs->x = 512 - tmw * 16 / 2;
-	int dSize = this->downs->width * this->downs->height;
+	downs = new GObject();
+	gLayer->AddObject(downs);
+	downs->width = 16 * tmw;
+	downs->height = 16 * tmh;
+	downs->x = 512 - tmw * 16 / 2;
+	int dSize = downs->width * downs->height;
 	arr = new COLORREF[dSize];
 	memset(arr, 0xff, dSize * sizeof(COLORREF));
 	bp = CreateBitmap(arr, dSize, this->downs->width, this->downs->height);
@@ -345,7 +345,7 @@ void Tetris::Run(UINT f) {
 		//printf("\n");
 
 		if (state == 0) {
-			if (current->Down() == 1) {
+			if (drop == 0 && current->Down() == 1) {
 				RunSound(0);
 				current->Mark();
 				UpdateScores(Erase());
@@ -360,12 +360,6 @@ void Tetris::Run(UINT f) {
 		else if (state == 1) {
 			CoverGameOver();
 			cLayer->hide = 0;
-		}
-		else if (state == 2) {
-
-		}
-		else if (state == 3) {
-
 		}
 		else {
 
@@ -413,17 +407,37 @@ void Tetris::KeyDown(WPARAM wParam) {
 				cLayer->hide = 1;
 			}
 			break;
-		case 0x20://space						
-			current->Drop();
+		case 0x20://space
+			if (state == 0) {
+				if (current->Drop() == 0) {
+					drop = 1;
+					RunSound(0);
+					current->Mark();
+					UpdateScores(Erase());
+					UpdateDowns();
+					current->Set(next->id);
+					next->Set();
+					if (current->Top() == 1) {
+						state = 1;
+					}
+					drop = 0;
+				}				
+			}			
 			break;
 		case 0x25://l
-			current->Left();
+			if (state == 0) {
+				current->Left();
+			}			
 			break;
 		case 0x26://u	
-			current->Rotate();
+			if (state == 0) {
+				current->Rotate();
+			}			
 			break;
 		case 0x27://r
-			current->Right();
+			if (state == 0) {
+				current->Right();
+			}			
 			break;
 		case 0x28://d			
 			if (state == 0 && current->Down() == 1) {
@@ -464,7 +478,7 @@ void Tetris::KeyUp(WPARAM wParam) {
 		default:
 			break;
 		}
-	}	
+	}
 }
 
 void Tetris::KeyPressing(WPARAM wParam) {
@@ -472,12 +486,16 @@ void Tetris::KeyPressing(WPARAM wParam) {
 	case 0x20://space
 		break;
 	case 0x25://l
-		current->Left();
+		if (state == 0) {
+			current->Left();
+		}
 		break;
 	case 0x26://u
 		break;
 	case 0x27://r
-		current->Right();
+		if (state == 0) {
+			current->Right();
+		}
 		break;
 	case 0x28://d
 		if (state == 0 && current->Down() == 1) {

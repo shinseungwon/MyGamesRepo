@@ -117,6 +117,7 @@ public:
 	GObject* title;
 
 	BYTE state = 3;//0 : running, 1 : game over, 2 : paused, 3 : game title
+	BYTE drop = 0;
 
 	Block* current = nullptr;
 	Block* next = nullptr;

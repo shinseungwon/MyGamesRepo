@@ -77,13 +77,14 @@ DWORD LoadMp3(HWND& hWnd, LPCWSTR path)
 	DWORD res = mciSendCommand(1, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_ELEMENT, (DWORD64)(LPVOID)&mciOpen);
 	char* errorStr = new char[128];
 	mciGetErrorStringA(res, errorStr, 128);
-	cout << "Load error : " << res << "(" << errorStr << ")" << endl;
+	if (res > 0) {
+		cout << "Mp3 load error : " << res << " (" << errorStr << ")" << endl;
+	}	
 	return res;
 }
 
 void PlayMp3(HWND& hWnd, int id) {
-	MCI_PLAY_PARMS mciPlay;
-	//mciPlay.dwCallback = (DWORD)hWnd;
+	MCI_PLAY_PARMS mciPlay;	
 	mciSendCommand(id, MCI_SEEK, MCI_SEEK_TO_START, (DWORD64)(LPVOID)NULL);
 	mciSendCommand(id, MCI_PLAY, MCI_NOTIFY, (DWORD64)(LPVOID)&mciPlay);
 }

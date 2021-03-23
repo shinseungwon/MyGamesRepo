@@ -1721,3 +1721,25 @@ const BYTE alphabetBitmaps[52][32]{
 	sub[13]->SetShape(10);
 	sub[14]->SetShape(10);
 	sub[15]->SetShape(10);
+
+	GObject* c = new GObject();
+	int cw = 1;
+	int sz = 256 * cw * cw;
+	c->x = 128;
+	c->y = 128;
+	c->width = 16 * cw;
+	c->height = 16 * cw;
+	arr = new COLORREF[256];
+	for (i = 0; i < 256; i++) {
+		if (circle[i] == 1) {
+			arr[i] = GREEN;
+		}
+		else {
+			arr[i] = TRANSPARENT;
+		}
+	}
+	bp = CreateBitmap(arr, 256, 16, 16, cw);
+	AddShape(bp);
+	c->AddShape(bp);
+	cLayer->AddObject(c);
+	delete[] arr;

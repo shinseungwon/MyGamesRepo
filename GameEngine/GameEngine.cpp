@@ -2,21 +2,13 @@
 #include "Tetris.h"
 
 #pragma comment(lib,"winmm.lib")
-
-using namespace std;
-
-#define WIDTH 1024
-#define HEIGHT 512
-
 #pragma warning(disable:4996)
 
-static TCHAR windowClass[] = _T("DesktopApp");
-static TCHAR title[] = _T("GameTestBoard");
+#define WIDTH 1024
+#define HEIGHT 768
 
-static HINSTANCE hInst;
-static HINSTANCE hPrevInst;
-static LPWSTR lpCmdLn;
-static int nCmdS;
+const TCHAR windowClass[] = _T("MyGameWindow");
+const TCHAR title[] = _T("MyGame");
 
 HWND hWnd;
 Game* myGame;
@@ -26,15 +18,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 int main(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine)
 {
-	hInst = hInstance;
-	hPrevInst = hPrevInstance;
-	lpCmdLn = lpCmdLine;
-	nCmdS = 1;
-
 	srand(static_cast<unsigned int>(time(NULL)));
-	wWinMain(hInst, hPrevInst, lpCmdLn, nCmdS);
-
-	return 0;
+	return wWinMain(hInstance, hPrevInstance, lpCmdLine, 1);	
 }
 
 int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow)
@@ -60,7 +45,7 @@ int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LP
 	}
 
 	hWnd = CreateWindow(windowClass, title, WS_OVERLAPPEDWINDOW
-		, CW_USEDEFAULT, CW_USEDEFAULT, WIDTH + 64, HEIGHT + 64, NULL, NULL, hInstance, NULL);
+		, CW_USEDEFAULT, CW_USEDEFAULT, WIDTH, HEIGHT + 32, NULL, NULL, hInstance, NULL);
 
 	if (!hWnd)
 	{
@@ -68,7 +53,7 @@ int wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LP
 		return 1;
 	}
 
-	ShowWindow(hWnd, nCmdS);
+	ShowWindow(hWnd, 1);
 	UpdateWindow(hWnd);
 
 	//Start game
